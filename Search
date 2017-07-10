@@ -1,0 +1,163 @@
+import os
+import jieba
+import math
+
+os.chdir('e:/scrapys/dict')
+dict_before = {}
+inverted_index = {}
+TF = {}
+word_num = {}
+TF_IDF = {}
+serch = {}
+file_num = 5
+#topic_name = 1000
+
+for i in range(file_num):
+    topic_name = str(1000 + i)
+    topic_name = topic_name + '.txt'
+    with open(topic_name) as f:
+        strs = f.read()
+        #print(topic_name)
+        #print(strs)
+        after_cut = jieba.cut(strs,cut_all=True)
+        TF.setdefault(topic_name, [])
+        word_number = 0
+        words = []
+        for small in after_cut:
+            word_number += 1
+            if small in words:
+                for tf_list in TF[topic_name]:
+                    if small == tf_list[0]:
+                        tf_list[1] += 1
+            else:
+                words.append(small)
+                TF[topic_name].append([small, 1])
+        word_num[topic_name] = word_number
+        dict_before[topic_name] = words
+    for tfc in TF[topic_name]:
+        tfc[1] = tfc[1]/word_number
+
+    """
+    print(dict_before.keys())
+    print('\n')
+    print(dict_before.values())
+    """
+#print(dict_before)
+#print(TF)
+    #split_list = ['','br','dd','\n']
+for key,word in dict_before.items():
+    for value in word:
+#            for splits in split_list:
+        if value in inverted_index.keys():#you du
+            insert = True
+            for docs in inverted_index[value]:
+                if key == docs:
+                    insert = False
+            if insert == True:
+                inverted_index[value].append(key)
+
+        else:
+            if value == '' or value =='br' or value == 'dd' or value == '\n':
+                continue
+            else:
+                inverted_index.setdefault(value,[]).append(key)
+
+#print(inverted_index)
+
+for word,file_list in inverted_index.items():
+    #serch.setdefault(word,[])
+    TF_IDF.setdefault(word,[])
+    #rint(file_num/len(file_list))
+    IDF = math.log(file_num/len(file_list))
+    #print(IDF)
+    #rank = []
+
+    for file_index,tf_list in TF.items():
+        for tf in tf_list:
+            if word == tf[0]:
+                tf_idf = tf[1]*IDF
+                if tf_idf == 0.0:
+                    continue
+                #rank.append(tf_idf)
+                TF_IDF[word].append([file_index,tf_idf])
+#print(TF_IDF)
+
+#bulid the first three tf_idf list
+
+for word,doc_list in TF_IDF.items():
+    #print(doc_list)
+
+    if doc_list == []:
+        continue
+    serch.setdefault(word, [])
+    rank = []
+    for chid_list in doc_list:
+        if len(doc_list) < 3:
+            serch[word].append(chid_list)
+        else:
+            rank.append(chid_list[1])
+
+    if rank != []:
+        rank.reverse()
+        for chid_lis in doc_list:
+            if chid_lis[1] == rank[0]:
+                serch[word].append(chid_lis)
+            elif chid_lis[1] == rank[1]:
+                serch[word].append(chid_lis)
+            elif chid_lis[1] == rank[2]:
+                serch[word].append(chid_lis)
+
+
+
+"""
+    #print(len(rank))
+    rank.reverse()
+    for file_index,tf_list in TF.items():
+        for tf in tf_list:
+            #print(type(tf))
+            if len(rank) > 2:
+                if tf[1] == rank[0]:
+                    serch[word].append([file_index,rank[0]])
+                elif tf[1] == rank[1]:
+                    serch[word].append([file_index, rank[1]])
+                elif tf[1] == rank[2]:
+                    serch[word].append([file_index,rank[2]])
+            else:
+                serch[word].append([file_index,tf])
+"""
+#print(inverted_index)
+#print(serch)
+if __name__ == "__main__":
+    print(serch.keys())
+
+    print('Already loop through all the topics in the aim catalogue... ')
+    print('Search engine prepared......')
+    print('If you want to stop search , just type a word   exit   and press enter......')
+    print('Please type in the content to start......Press enter to ensure you enter...')
+
+    stop = False
+    while stop == False:
+        input_str = input()
+        if input_str == 'exit':
+            stop = True
+            continue
+        if input_str in serch.keys():
+            out_list = serch[input_str]
+            for outs in out_list:
+                #print(outs)
+                print('The related topics is :%s'% outs[0])
+        else:
+            print("Can't find the request word......")
+
+
+
+    '''
+    cut = jieba.cut(input_str,cut_all=True)
+    total = 0
+    for word in cut:
+        if word in _STOP_WORDS:
+            continue
+        else:
+            for tf_idf_list in serch[word]:
+                total += tf_idf_list[1]
+'''
